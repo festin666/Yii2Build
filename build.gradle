@@ -21,11 +21,20 @@ dependencies {
   compile localGroovy()
 }
 
-version = "0.1"
+def longVersionName = "git -C ${rootDir} describe --tags --long".execute().text.trim()
+	def (fullVersionTag, versionBuild, gitSha) = longVersionName.tokenize('-')
+	def (versionMajor, versionMinor) = fullVersionTag.tokenize('.')
+	def versionName = "$versionMajor.$versionMinor-$versionBuild"
+	//noinspection GroovyAssignabilityCheck
+	def versionCode = versionMajor.toInteger() * 10000 +
+			versionMinor.toInteger() * 1000 +
+			versionBuild.toInteger()
+	
+version = versionName
 group = "com.github.festin666"
 
 pluginBundle {
-  website = 'http://www.gradle.org/'
+  website = 'https://github.com/festin666/Yii2Build'
   vcsUrl = 'https://github.com/gradle/gradle'
   description = 'Plugin for build basic Yii2 projects.'
   tags = ['yii2', 'php']
@@ -36,4 +45,9 @@ pluginBundle {
       displayName = 'Gradle plugin for build basic Yii2 projects'
     }
   }
+}
+
+task version() << {
+	printf("\n--------" + "VERSION DATA--------" + "\n" + "- CODE: " + versionCode + "\n" +
+		"- NAME: " + versionName + "\n----------------------------\n")
 }
