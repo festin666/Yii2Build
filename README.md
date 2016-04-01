@@ -1,58 +1,46 @@
 # Yii2Build
 Gradle plugin for build basic Yii2 projects
 
-You can use build.gradle like that (imports is my bad, I'll correct in pugin):
+Yii2 PHP projects have many things when deploy - composer update, migrations for DB, tests rebuild, add default user, ... I forget something sometimes. Deploying from scratch like a hell for me.
 
-    import com.github.festin666.executeYii
-    import com.github.festin666.executeCodecept
-    import com.github.festin666.cInstall
-    
-    plugins {
-      id "com.github.festin666.yii2build" version "0.1"
-    }
-    
-    task build () {
-    	dependsOn {['install', 'migrateUp', 'migrateRbac', 'createPerm', 'createAdmin']}
-    }
-    task test() {
-    	dependsOn {['install', 'migrateUp', 'migrateRbac', 'createPerm', 'createAdmin', 'testUnit']}
-    	def test = true;
-    }
-    
-    task createPerm (type: executeYii, dependsOn: ['install', 'migrateUp', 'migrateRbac']) {
-    	arg1 = 'perm/create-hierarchy'
-    }
-    
-    task createAdmin (type: executeYii, dependsOn: ['install', 'migrateUp', 'migrateRbac', 'createPerm']) {
-    	arg1 = 'perm/create-admin'
-    }
-    
-    task testUnit (type: executeCodecept) {
-    	dependsOn {['buildCodeception']}
-    }
-    
-    task install(type: cInstall) {
-    }
-    
-    task migrateUp (type: executeYii, dependsOn: install) {
-    }
-    
-    task migrateRbac (type: executeYii) {
-    	dependsOn {['install', 'migrateUp']}
-    }
-    
-    task buildCodeception(type: executeCodecept) { 
-    	dependsOn {['install']}
-    	def confDir = 'tests/codeception'
-    	def genDir = 'tests/codeception/_support/_generated'
-    	FileCollection ymlConfigs = files(
-    		new File(confDir + '/unit.suite.yml'),
-    		new File(confDir + '/acceptance.suite.yml'),
-    		new File(confDir + '/functional.suite.yml'))
-    	FileCollection generatedActions = files(
-    		new File(genDir + '/UnitTesterActions.php'),
-    		new File(genDir + '/AcceptanceTesterActions.php'),
-    		new File(genDir + '/FunctionalTesterActions.php'))
-    	inputs.files ymlConfigs
-    	outputs.files generatedActions
-    }
+Now, you can place into build.gradle this code:
+
+	plugins {
+	  id "com.github.festin666.yii2build" version "0.2-2"
+	}
+
+	yii2build {
+		dotEnvEnabled = true
+		rbacEnabled = true
+		rbacMigrationsPath = '@app/vendor/yiisoft/yii2/rbac/migrations'
+		commandCreatePermissions = 'perm/create-hierarchy'
+		commandCreateAdmin = 'perm/create-admin'
+	}
+	
+And run `gradle build` for:
+
+- Install PHP dependencies by composer.
+- Roll up migrations by Yii2 internal system.
+- Roll up migrations for Yii2 RBAC.
+- Create RBAC permissions by your own command.
+- Create default user by your own command.
+
+If you want to test your project, run `gradle test` for:
+
+- Roll up migrations by Yii2 internal system.
+- Roll up migrations for Yii2 RBAC.
+- Create RBAC permissions by your own command.
+- Create default user by your own command.
+- Run codeception unit tests.
+
+All database operations in `test` task performs in test database (configured in tests/codeception/config/config.php).
+
+You can only prepare test environment for usage (without running tests) by specifying `-Ptesting` for gradle: `gradle build -Ptesting`.
+
+Config description:
+
+- `dotEnvEnabled` - is dotEnv (https://github.com/vlucas/phpdotenv) used or not.
+- `rbacEnabled` - is RBAC (http://www.yiiframework.com/doc-2.0/guide-security-authorization.html#rbac) used or not.
+- `rbacMigrationsPath` - path to Yii2 RBAC migrations. 
+- `commandCreatePermissions` - your own console command for Yii2 to create all known permissions.
+- `commandCreateAdmin` - your own console command for Yii2 to create default user.
