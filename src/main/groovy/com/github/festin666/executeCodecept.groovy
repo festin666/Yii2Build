@@ -14,24 +14,23 @@ class executeCodecept extends DefaultTask {
 		if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 			binary = 'codecept.bat'
 		}
-		if (envConfig.exists()) {
-			if (name == 'testUnit') {
-				project.exec {
-					workingDir 'tests'
-					executable prefix + binary
-					args 'run', 'unit'
-				}
-			} else if (name == 'buildCodeception') {
-				project.exec {
-					workingDir 'tests'
-					executable prefix + binary
-					args 'build'
-				}	
-			} else {
-				throw new GradleException("Unknown type '" + name + "' for task typed executeCodecept.")
-			}
-		} else {
+		if (project.yii2build.dotEnvEnabled && !envConfig.exists()) {
 			throw new GradleException("File " + envConfig.path + " is not exists.")
+		}
+		if (name == 'testUnit') {
+			project.exec {
+				workingDir 'tests'
+				executable prefix + binary
+				args 'run', 'unit'
+			}
+		} else if (name == 'buildCodeception') {
+			project.exec {
+				workingDir 'tests'
+				executable prefix + binary
+				args 'build'
+			}	
+		} else {
+			throw new GradleException("Unknown type '" + name + "' for task typed executeCodecept.")
 		}
 	}
 }

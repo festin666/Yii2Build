@@ -14,7 +14,7 @@ class executeYii extends DefaultTask {
 	def arg3 = ''
 	@TaskAction
 	def action() {
-		if (project.hasProperty('test')) {
+		if (project.hasProperty('testing')) {
 			envConfig = new File ('tests/.env')
 			prefix = 'tests/codeception/bin/'
 		} else {
@@ -23,25 +23,36 @@ class executeYii extends DefaultTask {
 		if (Os.isFamily(Os.FAMILY_WINDOWS)) {
 			execYii = 'yii.bat'
 		}
-		if (envConfig.exists()) {
-			if (name == 'migrateUp') {
-				project.exec {
-					executable prefix + execYii
-					args 'migrate/up', '--interactive=0'
+		if (project.yii2build.dotEnvEnabled && !envConfig.exists()) {
+			throw new GradleException("File " + envConfig.path + " is not exists.")
+		}
+		if (name == 'migrateUp') {
+			project.exec {
+				executable prefix + execYii
+				args 'migrate/up', '--interactive=0'
+			}
+			println ""
+		} else if (name == 'migrateRbac') {
+				def rbacMigrationsPath = '@app/vendor/yiisoft/yii2/rbac/migrations'
+				if (project.yii2build.rbacMigrationsPath) {
+					rbacMigrationsPath = project.yii2build.rbacMigrationsPath
 				}
-			} else if (name == 'migrateRbac') {
 				project.exec {
 					executable prefix + execYii
-					args 'migrate/up', '--migrationPath=@app/vendor/yiisoft/yii2/rbac/migrations', '--interactive=0'
+					args 'migrate/up', '--migrationPath=' + rbacMigrationsPath, '--interactive=0'
+				}
+			
+			println ""
+		} else {
+			if (arg1 != '') {
+				println "running command: " + arg1
+				project.exec {
+					executable prefix + execYii
+					args arg1, arg2, arg3 // todo make arguments list dynamic
 				}
 			} else {
-				project.exec {
-					executable prefix + execYii
-					args arg1, arg2, arg3
-				}
+				println 'command for Yii console not specified.'
 			}
-		} else {
-			throw new GradleException("File " + envConfig.path + " is not exists.")
 		}
 	}
 }
